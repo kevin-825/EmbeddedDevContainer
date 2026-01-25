@@ -6,8 +6,8 @@ FROM ubuntu:24.04
 LABEL maintainer="kevin@riscv.dev"
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV USER=ubuntu
-ENV HOME=/home/$USER
+ENV $ContainerUSER=ubuntu
+ENV HOME=/home/$ContainerUSER
 
 # -------------------------------
 # Configurable tool paths
@@ -53,14 +53,14 @@ RUN apt-get install -y --no-install-recommends sudo \
 # -------------------------------
 # Create user + workspace
 # -------------------------------
-RUN id -u $USER >/dev/null 2>&1 || useradd --create-home -s /bin/bash -m $USER \
-  && echo "$USER:$USER" | chpasswd \
-  && usermod -aG sudo $USER \
+RUN id -u $ContainerUSER >/dev/null 2>&1 || useradd --create-home -s /bin/bash -m $ContainerUSER \
+  && echo "$ContainerUSER:$ContainerUSER" | chpasswd \
+  && usermod -aG sudo $ContainerUSER \
   && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
-  && chown -R $USER:$USER /home/$USER \
-  && chown -R $USER:$USER /opt
+  && chown -R $ContainerUSER:$ContainerUSER /home/$ContainerUSER \
+  && chown -R $ContainerUSER:$ContainerUSER /opt
 
-USER $USER
+USER $ContainerUSER
 WORKDIR $HOME
 
 RUN mkdir -p /home/ubuntu/workspaces \

@@ -70,8 +70,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nano \
     ca-certificates \
     zsh \
-    fonts-powerline \
     fzf \
+    fonts-powerline \
+    fonts-noto-cjk \
+    locales \
+    && locale-gen en_US.UTF-8 \
+    && update-locale LANG=en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
 # --------------------------------------------

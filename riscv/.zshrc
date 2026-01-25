@@ -19,11 +19,12 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 # Load your workspace alias files
-#[ -f $HOME/workspaces/.bash_aliases ] && source $HOME/workspaces/.bash_aliases
-#[ -f $HOME/workspaces/.bash_aliases_1 ] && source $HOME/workspaces/.bash_aliases_1
-# Load your workspace alias files
-[ -f /hst_root/home/kflyn/.bash_aliases ] && source /hst_root/home/kflyn/.bash_aliases
-[ -f /hst_root/home/kflyn/.bash_aliases_1 ] && source /hst_root/home/kflyn/.bash_aliases_1
+hst_user=kflyn
+[ -f $HOME/workspaces/.bash_aliases ] && source $HOME/workspaces/.bash_aliases
+if [ -f /hst_root/home/$hst_user/.bash_aliases_1 ]; then
+    sed -i 's/\r$//' /hst_root/home/$hst_user/.bash_aliases_1
+    source /hst_root/home/$hst_user/.bash_aliases_1
+fi
 
 # fzf keybindings + completion
 if [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then

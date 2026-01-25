@@ -2,9 +2,9 @@
 
 set -eu
 
-source ~/.bash_aliases_1
 
-container_name=$3
+
+container_name=$2
 ContainerUSER=ubuntu
 if [ -z "$container_name" ]; then
     echo error in container name
@@ -14,33 +14,24 @@ fi
 #docker rm $container_name
 #docker ps -a
 #docker images
-repo=$1
-tag=$2
-img=$repo-$tag
+
+img_name=$1
+img_name_path="${img_name//:/_}"
 
 mkdir -p ~/Containers
 
 curdir="$(pwd)"
-host_dir_for_container=~/Containers/$img
+host_dir_for_container=~/Containers/$img_name_path
 
-# sudo docker run --name $container_name \
-# -v $host_dir_for_container/workspace:/workspace \
-# -v $host_dir_for_container/root:/root \
-# -v $host_dir_for_container/root/.bash_history:/root/.bash_history \
-# -v $host_dir_for_container/opt:/opt \
-# -v $host_dir_for_container/home:/home \
-# -v /home/kevin/toolchain/officialRiscvToolchain:/home/kevin/tools \
-# -v /home/kevin/officialRepos:/home/kevin/officialRepos \
-# -v /home/kevin/kflyn825Repos:/home/kevin/kflyn825Repos \
-# -v /opt/riscv-gnu-toolchain-u22:/opt/riscv-gnu-toolchain-u22 \
-# -it -p 2222:22  $repo:$tag
+
+
+# $dockerVolumes define in .bash_aliases_1 file and expands as 
+# -v /mnt/wsl/vhd0:/mnt/wsl/vhd0 -v /mnt/wsl/vhd1:/mnt/wsl/vhd1 -v /mnt/wsl/disk1:/mnt/wsl/disk1 -v /mnt/wsl/disk2:/mnt/wsl/disk2 -v /mnt/wsl/ramdisk5:/mnt/wsl/ramdisk5
+source ~/.bash_aliases_1
 
 echo "xxxxxxxxxxxxxxx"
 #echo $dockerVolumes
 echo "xxxxxxxxxxxxxxx"
-
-# $dockerVolumes define in .bash_aliases_1 file and expands as 
-# -v /mnt/wsl/vhd0:/mnt/wsl/vhd0 -v /mnt/wsl/vhd1:/mnt/wsl/vhd1 -v /mnt/wsl/disk1:/mnt/wsl/disk1 -v /mnt/wsl/disk2:/mnt/wsl/disk2 -v /mnt/wsl/ramdisk5:/mnt/wsl/ramdisk5
 
 create_run_container="docker run -it --name $container_name \
 -v $host_dir_for_container/workspaces:/home/$ContainerUSER/workspaces \
@@ -49,7 +40,7 @@ create_run_container="docker run -it --name $container_name \
 -v /home/$USER/.ssh:/home/$ContainerUSER/.ssh \
 -v /:/hst_root \
 $dockerVolumes \
--P $repo:$tag "
+-P $img_name "
 
 #echo create_run_container:$create_run_container
 
