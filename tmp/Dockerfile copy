@@ -1,0 +1,269 @@
+# syntax=docker/dockerfile:1.4
+
+###############################################
+# Stage 0 — Build Spike → QEMU → ELF toolchain → riscv-pk → GLIBC toolchain
+###############################################
+FROM ubuntu:24.04 AS qemu_spike_pk_builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# -------------------------------
+# Configurable versions
+# -------------------------------
+ARG SPIKE_VERSION=master
+ARG QEMU_VERSION=v10.2.0
+ARG RISCV_PK_VERSION=master
+ARG RV_NEWLIB_URL="https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2026.01.09/riscv64-elf-ubuntu-24.04-gcc.tar.xz"
+ARG RV_GLIBC_URL="https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2026.01.09/riscv64-glibc-ubuntu-24.04-gcc.tar.xz"
+
+# Print accepted versions
+RUN echo "==============================================" && \
+    echo " Accepted Build Versions" && \
+    echo "----------------------------------------------" && \
+    echo " SPIKE_VERSION:     ${SPIKE_VERSION}" && \
+    echo " QEMU_VERSION:      ${QEMU_VERSION}" && \
+    echo " RISCV_PK_VERSION:  ${RISCV_PK_VERSION}" && \
+    echo " RV_NEWLIB_URL:        ${RV_NEWLIB_URL}" && \
+    echo " RV_GLIBC_URL:      ${RV_GLIBC_URL}" && \
+    echo "=============================================="
+
+# -------------------------------
+# Build dependencies
+# -------------------------------
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
+    git \
+    openssh-client \
+    build-essential \
+    g++ \
+    autoconf \
+    automake \
+    libtool \
+    device-tree-compiler \
+    ninja-build \
+    cmake \
+    python3 python3-pip \
+    meson \
+    pkg-config \
+    libglib2.0-dev \
+    libpixman-1-dev \
+    zlib1g-dev \
+    libslirp-dev \
+    libaio-dev \
+    liburing-dev \
+    libncurses-dev \
+    libgmp-dev \
+    libmpfr-dev \
+    libmpc-dev \
+    flex \
+    bison \
+    wget \
+    xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+
+WORKDIR /opt/src
+
+# Add GitHub host key
+RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh && \
+    ssh-keyscan github.com >> /root/.ssh/known_hosts
+
+# ------------------------------------------------
+# 0.1 — Build Spike (SSH clone)
+# ------------------------------------------------
+RUN git clone git@github.com:riscv-software-src/riscv-isa-sim.git \
+    && cd riscv-isa-sim \
+    && git checkout ${SPIKE_VERSION} \
+    && mkdir build && cd build \
+    && ../configure --prefix=/opt/spike \
+    && make -j"$(nproc)" \
+    && make install
+
+# ------------------------------------------------
+# 0.2 — Build QEMU (SSH clone)
+# ------------------------------------------------
+#RUN ssh-keyscan gitlab.com >> /root/.ssh/known_hosts
+
+RUN git clone https://gitlab.com/qemu-project/qemu.git \
+    && cd qemu \
+    && git checkout ${QEMU_VERSION} \
+    && mkdir build && cd build \
+    && ../configure \
+        --target-list=riscv64-softmmu,riscv32-softmmu \
+        --prefix=/opt/qemu \
+    && make -j"$(nproc)" \
+    && make install
+
+# ------------------------------------------------
+# 0.3 — Download ELF toolchain
+# ------------------------------------------------
+ENV WIN_GATEWAY=172.26.176.1
+ENV PROXY_PORT=10808
+# Print accepted Proxy Args
+RUN echo "==============================================" && \
+    echo " Accepted Proxy Args" && \
+    echo "----------------------------------------------" && \
+    echo " WIN_GATEWAY:     ${WIN_GATEWAY}" && \
+    echo " PROXY_PORT:      ${PROXY_PORT}" && \
+    echo "=============================================="
+
+RUN export http_proxy="http://${WIN_GATEWAY}:${PROXY_PORT}" \
+    && export https_proxy="http://${WIN_GATEWAY}:${PROXY_PORT}" \
+    && export all_proxy="http://${WIN_GATEWAY}:${PROXY_PORT}" \
+    && mkdir -p /opt/riscv-elf \
+    && wget -O /tmp/riscv-elf.tar.xz "https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2026.01.09/riscv64-elf-ubuntu-24.04-gcc.tar.xz" \
+    && tar -xf /tmp/riscv-elf.tar.xz -C /opt/riscv-elf \
+    && rm /tmp/riscv-elf.tar.xz
+
+ENV PATH="/opt/riscv-elf/riscv/bin:${PATH}"
+# ------------------------------------------------
+# 0.4 — Download GLIBC toolchain
+# ------------------------------------------------
+RUN export http_proxy="http://${WIN_GATEWAY}:${PROXY_PORT}" \
+    && export https_proxy="http://${WIN_GATEWAY}:${PROXY_PORT}" \
+    && export all_proxy="http://${WIN_GATEWAY}:${PROXY_PORT}" \
+    && mkdir -p /opt/riscv-glibc \
+    && wget -O /tmp/riscv-glibc.tar.xz "${RV_GLIBC_URL}" \
+    && tar -xf /tmp/riscv-glibc.tar.xz -C /opt/riscv-glibc \
+    && rm /tmp/riscv-glibc.tar.xz
+
+
+# ------------------------------------------------
+# 0.5 — Build riscv-pk (SSH clone)
+# ------------------------------------------------
+RUN git clone git@github.com:riscv-software-src/riscv-pk.git \
+    && cd riscv-pk \
+    && git checkout ${RISCV_PK_VERSION} \
+    && mkdir build && cd build \
+    && ../configure \
+        --prefix=/opt/riscv-pk \
+        --host=riscv64-unknown-elf \
+    && make -j"$(nproc)" \
+    && make install
+
+###############################################
+# Stage 1 — Bare-metal / FreeRTOS image
+###############################################
+FROM ubuntu:24.04 AS baremetal
+
+LABEL maintainer="kevin@riscv.dev"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV USER=ubuntu
+ENV HOME=/home/$USER
+
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
+    sudo \
+    build-essential \
+    ninja-build \
+    cmake \
+    python3 python3-pip \
+    git \
+    gdb-multiarch \
+    libncurses-dev \
+    device-tree-compiler \
+    pkg-config \
+    vim \
+    nano \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy tools from builder
+COPY --from=qemu_spike_pk_builder /opt/qemu /opt/qemu
+COPY --from=qemu_spike_pk_builder /opt/spike /opt/spike
+COPY --from=qemu_spike_pk_builder /opt/riscv-pk /opt/riscv-pk
+COPY --from=qemu_spike_pk_builder /opt/riscv-elf /opt/riscv-elf
+
+ENV PATH="/opt/qemu/bin:/opt/spike/bin:/opt/riscv-pk/bin:/opt/riscv-elf/bin:${PATH}"
+
+# Create user + workspace
+RUN id -u $USER >/dev/null 2>&1 || useradd --create-home -s /bin/bash -m $USER \
+  && echo "$USER:$USER" | chpasswd \
+  && usermod -aG sudo $USER \
+  && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+  && chown -R $USER:$USER /home/$USER \
+  && chown -R $USER:$USER /opt
+
+# ⛳ Workspace setup
+USER $USER
+WORKDIR $HOME
+
+RUN mkdir -p $HOME/workspaces && chown -R $USER:$USER $HOME/workspaces
+WORKDIR $HOME/workspaces
+
+RUN echo  "if [ -f $HOME/workspaces/.bash_aliases ]; then" >> ~/.bashrc \
+  && echo "    . $HOME/workspaces/.bash_aliases" >> ~/.bashrc \
+  && echo "fi" >> ~/.bashrc \
+  && echo  "if [ -f $HOME/workspaces/.bash_aliases_1 ]; then" >> ~/.bashrc \
+  && echo "    . $HOME/workspaces/.bash_aliases_1" >> ~/.bashrc \
+  && echo "fi" >> ~/.bashrc
+
+CMD ["/bin/bash"]
+
+
+
+###############################################
+# Stage 2 — Linux kernel / userspace image
+###############################################
+FROM ubuntu:24.04 AS linux
+
+LABEL maintainer="kevin@riscv.dev"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV USER=ubuntu
+ENV HOME=/home/$USER
+
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
+    sudo \
+    build-essential \
+    ninja-build \
+    cmake \
+    python3 python3-pip \
+    git \
+    gdb-multiarch \
+    libncurses-dev \
+    libssl-dev \
+    libelf-dev \
+    bc \
+    flex \
+    bison \
+    kmod \
+    rsync \
+    device-tree-compiler \
+    pkg-config \
+    vim \
+    nano \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy tools from builder
+COPY --from=qemu_spike_pk_builder /opt/qemu /opt/qemu
+COPY --from=qemu_spike_pk_builder /opt/spike /opt/spike
+COPY --from=qemu_spike_pk_builder /opt/riscv-pk /opt/riscv-pk
+COPY --from=qemu_spike_pk_builder /opt/riscv-glibc /opt/riscv-glibc
+
+ENV PATH="/opt/qemu/bin:/opt/spike/bin:/opt/riscv-pk/bin:/opt/riscv-glibc/bin:${PATH}"
+
+# Create user + workspace
+RUN id -u $USER >/dev/null 2>&1 || useradd --create-home -s /bin/bash -m $USER \
+  && echo "$USER:$USER" | chpasswd \
+  && usermod -aG sudo $USER \
+  && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+  && chown -R $USER:$USER /home/$USER \
+  && chown -R $USER:$USER /opt
+
+# ⛳ Workspace setup
+USER $USER
+WORKDIR $HOME
+
+RUN mkdir -p $HOME/workspaces && chown -R $USER:$USER $HOME/workspaces
+WORKDIR $HOME/workspaces
+
+RUN echo  "if [ -f $HOME/workspaces/.bash_aliases ]; then" >> ~/.bashrc \
+  && echo "    . $HOME/workspaces/.bash_aliases" >> ~/.bashrc \
+  && echo "fi" >> ~/.bashrc \
+  && echo  "if [ -f $HOME/workspaces/.bash_aliases_1 ]; then" >> ~/.bashrc \
+  && echo "    . $HOME/workspaces/.bash_aliases_1" >> ~/.bashrc \
+  && echo "fi" >> ~/.bashrc
+
+CMD ["/bin/bash"]
