@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ninja-build \
     cmake \
     python3 python3-pip \
+    jq \
     git \
     gdb-multiarch \
     libncurses-dev \
@@ -59,7 +60,7 @@ ARG RISCV_PK_PATH=""
 ARG RV_NEWLIB_PATH=""
 ARG RV_GLIBC_PATH=""
 
-ENV PATH="${QEMU_PATH}/bin:${SPIKE_PATH}/bin:${RISCV_PK_PATH}/bin:${RV_NEWLIB_PATH}/bin:${RV_GLIBC_PATH}/bin:${PATH}"
+ENV PATH="${QEMU_PATH}:${SPIKE_PATH}:${RISCV_PK_PATH}:${RV_NEWLIB_PATH}:${RV_GLIBC_PATH}:${PATH}"
 
 
 # --------------------------------------------
