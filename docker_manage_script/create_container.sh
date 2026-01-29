@@ -39,6 +39,8 @@ create_run_container="docker run -it --name $container_name \
 -v $host_dir_for_container/root/.bash_history:/root/.bash_history \
 -v /home/$USER/.ssh:/home/$ContainerUSER/.ssh \
 -v /:/hst_root \
+-v $SSH_AUTH_SOCK:/ssh-agent \
+-e SSH_AUTH_SOCK=/ssh-agent \
 $dockerVolumes \
 -P $img_name "
 

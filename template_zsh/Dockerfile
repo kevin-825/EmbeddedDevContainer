@@ -19,6 +19,7 @@ ENV HOME=/home/$ContainerUSER
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     git \
+    openssh-client \
     nano \
     curl \
     ca-certificates \
