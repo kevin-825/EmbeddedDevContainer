@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     python3 python3-pip \
     python3-dev \
+    python3-setuptools \
     meson \
     pkg-config \
     libglib2.0-dev \
@@ -38,7 +39,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libaio-dev \
     liburing-dev \
     libncurses-dev \
+    libncurses5-dev \
     libncursesw5-dev \
+    libsource-highlight-dev \
+    libbabeltrace-dev \
+    libelf-dev \
+    liblzma-dev \
+    libedit-dev \
+    guile-3.0-dev \
+    bc \
     libgmp-dev \
     libmpfr-dev \
     libmpc-dev \
@@ -74,6 +83,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-powerline \
     fonts-noto-cjk \
     locales \
+    libsdl2-dev \
+    libipt-dev \
+    libcap-ng-dev \
     && locale-gen en_US.UTF-8 \
     && update-locale LANG=en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
