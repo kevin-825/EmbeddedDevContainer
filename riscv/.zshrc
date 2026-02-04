@@ -19,8 +19,9 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 # Load your workspace alias files
-hst_user=kflyn
 [ -f $HOME/workspaces/.bash_aliases ] && source $HOME/workspaces/.bash_aliases
+
+hst_user=kflyn
 if [ -f /hst_root/home/$hst_user/.bash_aliases_1 ]; then
     sed -i 's/\r$//' /hst_root/home/$hst_user/.bash_aliases_1
     source /hst_root/home/$hst_user/.bash_aliases_1

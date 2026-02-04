@@ -19,6 +19,10 @@ ENV HOME=/home/$ContainerUSER
 # -------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
+    libpixman-1-0 \
+    libslirp0 \
+    libaio1t64 \
+    liburing2 \
     build-essential \
     ninja-build \
     cmake \
@@ -51,7 +55,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && locale-gen en_US.UTF-8 \
     && update-locale LANG=en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
-
+# -------------------------------------------------------
+# arm qemu Dependencies (for GUI applications inside container)
+# -------------------------------------------------------
+RUN apt-get update && apt-get install -y \
+    libjpeg8 \
+    libepoxy0 \
+    libgtk-3-0 \
+    libgdk-pixbuf-2.0-0 \
+    libcairo2 \
+    libx11-6 \
+    libsdl2-2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 # -------------------------------------------------------
 # Configurable RISC-V Toolchain Paths
 # -------------------------------------------------------
