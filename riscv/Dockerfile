@@ -32,6 +32,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-client \
     gdb-multiarch \
     libncurses-dev \
+    guile-3.0-dev \
+    libyaml-dev \
+    python3-yaml \
     libssl-dev \
     libelf-dev \
     bc \
@@ -82,10 +85,18 @@ ENV PATH="${QEMU_PATH}:${SPIKE_PATH}:${RISCV_PK_PATH}:${RV_NEWLIB_PATH}:${RV_GLI
 # --------------------------------------------
 # Create user
 # --------------------------------------------
-RUN id -u $ContainerUSER >/dev/null 2>&1 || useradd --create-home -s /bin/bash -m $ContainerUSER \
-  && echo "$ContainerUSER:$ContainerUSER" | chpasswd \
-  && usermod -aG sudo $ContainerUSER \
-  && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+# 1. Force the existing user to match the host's UID/GID
+# 2. Fix the home directory permissions
+# 3. Enable passwordless sudo
+RUN groupmod -g ${GROUP_ID} $ContainerUSER || true \
+    && usermod -u ${USER_ID} -g ${GROUP_ID} $ContainerUSER \
+    && echo "$ContainerUSER:$ContainerUSER" | chpasswd \
+    && usermod -aG sudo $ContainerUSER \
+    && echo "$ContainerUSER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-cloud-init-users \
+    && chown -R ${USER_ID}:${GROUP_ID} /home/$ContainerUSER
 
 # --------------------------------------------
 # Create workspaces folder (separate block)

@@ -53,12 +53,18 @@ RUN apt-get install -y --no-install-recommends sudo \
 # -------------------------------
 # Create user + workspace
 # -------------------------------
-RUN id -u $ContainerUSER >/dev/null 2>&1 || useradd --create-home -s /bin/bash -m $ContainerUSER \
-  && echo "$ContainerUSER:$ContainerUSER" | chpasswd \
-  && usermod -aG sudo $ContainerUSER \
-  && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
-  && chown -R $ContainerUSER:$ContainerUSER /home/$ContainerUSER \
-  && chown -R $ContainerUSER:$ContainerUSER /opt
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+# 1. Force the existing user to match the host's UID/GID
+# 2. Fix the home directory permissions
+# 3. Enable passwordless sudo
+RUN groupmod -g ${GROUP_ID} $ContainerUSER || true \
+    && usermod -u ${USER_ID} -g ${GROUP_ID} $ContainerUSER \
+    && echo "$ContainerUSER:$ContainerUSER" | chpasswd \
+    && usermod -aG sudo $ContainerUSER \
+    && echo "$ContainerUSER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-cloud-init-users \
+    && chown -R ${USER_ID}:${GROUP_ID} /home/$ContainerUSER
 
 USER $ContainerUSER
 WORKDIR $HOME
