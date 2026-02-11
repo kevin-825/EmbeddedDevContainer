@@ -67,6 +67,7 @@ run_build() {
             cleanup_outdated_caches
             local imgName=$($jSON_RESOLVER "$JSON_CFG" 'build.imgName')
             echo ">>> Build $imgName completed successfully."
+            #create_container.sh $imgName dev0 -y
         else
             echo ">>> ERROR: Docker build failed."
             exit 1
