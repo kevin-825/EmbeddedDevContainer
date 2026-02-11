@@ -1,0 +1,3 @@
+[submodule "json_resolve_scripts"]
+	path = json_resolve_scripts
+	url = git@github.com:kevin-825/json_resolve_scripts.git
