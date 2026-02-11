@@ -1,63 +1,67 @@
-###############################################
-# Unified Embedded Development Image
-# FreeRTOS + Linux kernel + QEMU + GDB + Python
-###############################################
 FROM ubuntu:24.04
 
 LABEL maintainer="kevin@riscv.dev"
-
 ENV DEBIAN_FRONTEND=noninteractive
 
-# --------------------------------------------
-# Configurable username
-# --------------------------------------------
-ENV ContainerUSER=ubuntu
-ENV HOME=/home/$ContainerUSER
-
+# Install system dependencies
 # -------------------------------------------------------
 # Base + Embedded Development Dependencies
 # -------------------------------------------------------
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo \
-    libpixman-1-0 \
-    libslirp0 \
-    libaio1t64 \
-    liburing2 \
-    build-essential \
-    ninja-build \
-    cmake \
-    python3 python3-pip \
-    jq \
-    git \
-    openssh-client \
-    gdb-multiarch \
-    libncurses-dev \
-    guile-3.0-dev \
-    libyaml-dev \
-    python3-yaml \
-    libssl-dev \
-    libelf-dev \
-    bc \
-    flex \
-    bison \
-    kmod \
-    rsync \
-    device-tree-compiler \
-    pkg-config \
-    vim \
-    nano \
-    udev \
-    usbutils \
-    openocd \
-    curl \
-    zsh \
-    fzf \
-    fonts-powerline \
-    fonts-noto-cjk \
-    locales \
-    && locale-gen en_US.UTF-8 \
-    && update-locale LANG=en_US.UTF-8 \
-    && rm -rf /var/lib/apt/lists/*
+RUN <<EOF
+        set -e
+        apt-get update
+        apt-get install -y --no-install-recommends \
+        sudo \
+        wget \
+        libpixman-1-0 \
+        libslirp0 \
+        libaio1t64 \
+        liburing2 \
+        build-essential \
+        ninja-build \
+        cmake \
+        python3 python3-pip \
+        jq \
+        git \
+        openssh-client \
+        gdb-multiarch \
+        libncurses-dev \
+        guile-3.0-dev \
+        libyaml-dev \
+        python3-yaml \
+        libssl-dev \
+        libelf-dev \
+        bc \
+        flex \
+        bison \
+        kmod \
+        rsync \
+        device-tree-compiler \
+        pkg-config \
+        vim \
+        nano \
+        udev \
+        usbutils \
+        openocd \
+        curl \
+        zsh \
+        fzf \
+        fonts-powerline \
+        fonts-noto-cjk \
+        locales
+
+    # Configure locales
+    locale-gen en_US.UTF-8
+    update-locale LANG=en_US.UTF-8
+    # Inside your RUN <<EOF block:
+      
+    # Install yq for YAML processing
+    ARCH=$(dpkg --print-architecture)
+    wget "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${ARCH}" -O /usr/bin/yq
+    chmod +x /usr/bin/yq
+    # Clean up APT cache to reduce image size
+    rm -rf /var/lib/apt/lists/*
+EOF
 # -------------------------------------------------------
 # arm qemu Dependencies (for GUI applications inside container)
 # -------------------------------------------------------
@@ -81,58 +85,64 @@ ARG RV_GLIBC_PATH=""
 
 ENV PATH="${QEMU_PATH}:${SPIKE_PATH}:${RISCV_PK_PATH}:${RV_NEWLIB_PATH}:${RV_GLIBC_PATH}:${PATH}"
 
+# Define user build arguments and environment
+ARG UID=1000
+ARG GID=1000
+ARG USERNAME="kevin"
+ENV HOME=/home/$USERNAME
 
-# --------------------------------------------
-# Create user
-# --------------------------------------------
-ARG USER_ID=1000
-ARG GROUP_ID=1000
+# Create non-root user and configure sudo permissions
+RUN <<EOF
+  set -e
+  if id "ubuntu" &>/dev/null; then
+    echo ">>> Removing default 'ubuntu' user to free up UID 1000"
+    userdel -r ubuntu || true
+    echo " userdel returned with code $?"
+  fi
+  #userdel -r ubuntu || true
+  echo ">>> Creating user '$USERNAME' with UID $UID and GID $GID"
+  groupadd -g ${GID} -o ${USERNAME}
+  useradd -u ${UID} -m -g ${USERNAME} -G sudo,plugdev -s /usr/bin/zsh ${USERNAME}
 
-# 1. Force the existing user to match the host's UID/GID
-# 2. Fix the home directory permissions
-# 3. Enable passwordless sudo
-RUN groupmod -g ${GROUP_ID} $ContainerUSER || true \
-    && usermod -u ${USER_ID} -g ${GROUP_ID} $ContainerUSER \
-    && echo "$ContainerUSER:$ContainerUSER" | chpasswd \
-    && usermod -aG sudo $ContainerUSER \
-    && echo "$ContainerUSER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-cloud-init-users \
-    && chown -R ${USER_ID}:${GROUP_ID} /home/$ContainerUSER
+  echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME}
+  chmod 0440 /etc/sudoers.d/${USERNAME}
+EOF
 
-# --------------------------------------------
-# Create workspaces folder (separate block)
-# --------------------------------------------
-RUN mkdir -p /home/$ContainerUSER/workspaces \
-  && chown -R $ContainerUSER:$ContainerUSER /home/$ContainerUSER/workspaces
+# Setup workspace and entrypoint script
+WORKDIR /workdir
 
-# --------------------------------------------
-# Install Oh-My-Zsh + Plugins + Themes
-# --------------------------------------------
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+COPY --chown=${USERNAME}:${GID} ./entrypoint.sh /home/entrypoint.sh
+RUN chmod +x /home/entrypoint.sh
 
-RUN git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-/home/$ContainerUSER/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
- && git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM:-/home/$ContainerUSER/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
- && git clone https://github.com/zsh-users/zsh-history-substring-search ${ZSH_CUSTOM:-/home/$ContainerUSER/.oh-my-zsh/custom}/plugins/zsh-history-substring-search
+# Set final environment variables and volume
+USER $USERNAME
 
-RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
-    ${ZSH_CUSTOM:-/home/$ContainerUSER/.oh-my-zsh/custom}/themes/powerlevel10k \
- && git clone https://github.com/sindresorhus/pure.git \
-    ${ZSH_CUSTOM:-/home/$ContainerUSER/.oh-my-zsh/custom}/themes/pure
+ENV LANG=en_US.UTF-8
+ENV TERM=xterm-256color
+ENV MyENV=devcontainer
 
-# --------------------------------------------
-# Copy .zshrc BEFORE switching user
-# --------------------------------------------
-COPY .zshrc /home/$ContainerUSER/.zshrc
-RUN chown -R $ContainerUSER:$ContainerUSER /home/$ContainerUSER/.oh-my-zsh /home/$ContainerUSER/.zshrc
+RUN <<EOF
+  set -e
+  # Install Oh-My-Zsh
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 
-# --------------------------------------------
-# Set default login shell to Zsh
-# --------------------------------------------
-RUN usermod -s /usr/bin/zsh $ContainerUSER
+  # Define Custom Directory for readability
+  ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
 
-# --------------------------------------------
-# Switch to non-root user
-# --------------------------------------------
-USER $ContainerUSER
-WORKDIR /home/$ContainerUSER
+  # Install Plugins
+  git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plugins/zsh-autosuggestions
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
+  git clone https://github.com/zsh-users/zsh-history-substring-search ${ZSH_CUSTOM}/plugins/zsh-history-substring-search
 
-CMD ["/usr/bin/zsh"]
+  # Install Themes
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k
+  git clone --depth=1 https://github.com/sindresorhus/pure.git ${ZSH_CUSTOM}/themes/pure
+EOF
+COPY --chown=${USERNAME}:${GID} ./.zshrc ${HOME}/.zshrc
+
+VOLUME ["/workdir"]
+
+ENTRYPOINT ["/home/entrypoint.sh"]
+#EXPOSE 5900
+CMD ["zsh"]
+
