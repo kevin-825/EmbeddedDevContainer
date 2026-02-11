@@ -38,7 +38,7 @@ generate_docker_image_build_command() {
 
     #local options=$(../json_resolve_scripts/resolver.sh '$JSON_CFG' '.build.options[]')
     local CMD=$($jSON_RESOLVER "$JSON_CFG" 'build.cmd')
-    echo -e ">>> [INFO] Full Docker command:\n $CMD "
+    echo -e ">>> [INFO] Full Docker command:\n $CMD " | sed -r 's/[[:space:]]{4,}/    \n  /g'
 
     if [[ -n "$CMD" ]]; then
         DOCKER_CMD=($CMD)
