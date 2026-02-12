@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+source ../json_resolve_scripts/shell_exception_handling_core/exception_handling_core.sh
 
 # --- Configuration & Defaults ---
 JSON_CFG="image.json"
@@ -9,9 +9,12 @@ RESOLVED_JSON_DATA=""
 
 cleanup_outdated_caches() {
     # Match the JSON key exactly: cleanOldCaches
-    local auto_clean=$($jSON_RESOLVER "$JSON_CFG" 'build.cacheArgs.autoCleanOldCaches')
-    local cache_src=$($jSON_RESOLVER "$JSON_CFG" 'build.cacheArgs.cacheSrc')
-    local cache_dest=$($jSON_RESOLVER "$JSON_CFG" 'build.cacheArgs.cacheDest')
+    local auto_clean
+    local cache_src
+    local cache_dest
+    auto_clean=$($jSON_RESOLVER "$JSON_CFG" 'build.cacheArgs.autoCleanOldCaches')
+    cache_src=$($jSON_RESOLVER "$JSON_CFG" 'build.cacheArgs.cacheSrc')
+    cache_dest=$($jSON_RESOLVER "$JSON_CFG" 'build.cacheArgs.cacheDest')
 
     if [[ "$auto_clean" == "on" ]] || [[ "$auto_clean" == "yes" ]]; then
         if [[ "$cache_src" != "$cache_dest" ]]; then
@@ -37,8 +40,11 @@ cleanup_outdated_caches() {
 generate_docker_image_build_command() {
 
     #local options=$(../json_resolve_scripts/resolver.sh '$JSON_CFG' '.build.options[]')
-    local CMD=$($jSON_RESOLVER "$JSON_CFG" 'build.cmd')
+    local CMD
+    CMD=$($jSON_RESOLVER "$JSON_CFG" 'build.cmd')
+
     echo -e ">>> [INFO] Full Docker command:\n $CMD " | sed -r 's/[[:space:]]{4,}/    \n  /g'
+
 
     if [[ -n "$CMD" ]]; then
         DOCKER_CMD=($CMD)
@@ -65,7 +71,8 @@ run_build() {
         # Check if the command succeeded
         if [[ $? -eq 0 ]]; then
             cleanup_outdated_caches
-            local imgName=$($jSON_RESOLVER "$JSON_CFG" 'build.imgName')
+            local imgName
+            imgName=$($jSON_RESOLVER "$JSON_CFG" 'build.imgName')
             echo ">>> Build $imgName completed successfully."
             #create_container.sh $imgName dev0 -y
         else
