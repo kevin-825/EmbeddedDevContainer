@@ -37,7 +37,7 @@
     "build": {
         "context": ".",
         "userNameSpace": "kflyn825",
-        "repoName": "rv_gnu_toolchain",
+        "repoName": "rv_toolchain_builder",
         "tag": "latest",
         "imgName": "${userNameSpace}/${repoName}:${tag}",
         "dockerfile": "Dockerfile",
