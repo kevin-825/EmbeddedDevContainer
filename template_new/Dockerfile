@@ -1,3 +1,37 @@
+# STAGE 1: Asset downloader
+FROM ubuntu:24.04 AS downloader
+
+RUN apt-get update && apt-get install -y git curl ca-certificates zsh
+
+# Setup a temporary directory to collect ZSH assets
+WORKDIR /assets
+# Force OMZ to install into our assets folder instead of /root
+ENV ZSH=/assets/.oh-my-zsh
+
+RUN <<EOF
+  ls -l /assets
+
+  set -e
+  # Install Oh-My-Zsh
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+  # Define Custom Directory using the variable
+  ZSH_CUSTOM="$ZSH/custom"
+
+  # Install Plugins
+  git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plugins/zsh-autosuggestions
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
+  git clone https://github.com/zsh-users/zsh-history-substring-search ${ZSH_CUSTOM}/plugins/zsh-history-substring-search
+
+  # Install Themes
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k
+  git clone --depth=1 https://github.com/sindresorhus/pure.git ${ZSH_CUSTOM}/themes/pure
+  ls -l /assets
+EOF
+
+# ---
+
+# STAGE 2: Final Image
 FROM ubuntu:24.04
 
 LABEL maintainer="kevin@riscv.dev"
@@ -60,7 +94,12 @@ EOF
 # Setup workspace and entrypoint script
 WORKDIR /workdir
 
+# Copy Assets from Stage 1
+# This keeps the main build fast and tidy
+COPY --from=downloader --chown=${USERNAME}:${GID} /assets/.oh-my-zsh ${HOME}/.oh-my-zsh
+COPY --chown=${USERNAME}:${GID} ./.zshrc ${HOME}/.zshrc
 COPY --chown=${USERNAME}:${GID} ./entrypoint.sh /home/entrypoint.sh
+
 RUN chmod +x /home/entrypoint.sh
 
 # Set final environment variables and volume
@@ -70,24 +109,6 @@ ENV LANG=en_US.UTF-8
 ENV TERM=xterm-256color
 ENV MyENV=devcontainer
 
-RUN <<EOF
-  set -e
-  # Install Oh-My-Zsh
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-  # Define Custom Directory for readability
-  ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
-
-  # Install Plugins
-  git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plugins/zsh-autosuggestions
-  git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
-  git clone https://github.com/zsh-users/zsh-history-substring-search ${ZSH_CUSTOM}/plugins/zsh-history-substring-search
-
-  # Install Themes
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k
-  git clone --depth=1 https://github.com/sindresorhus/pure.git ${ZSH_CUSTOM}/themes/pure
-EOF
-COPY --chown=${USERNAME}:${GID} ./.zshrc ${HOME}/.zshrc
 
 VOLUME ["/workdir"]
 
