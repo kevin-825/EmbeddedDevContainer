@@ -54,7 +54,7 @@ RUN <<EOF
         build-essential \
         ninja-build \
         cmake \
-        python3 python3-pip \
+        python3 python3-pip python-is-python3 \
         jq \
         git \
         openssh-client \

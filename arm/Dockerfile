@@ -45,10 +45,7 @@ RUN <<EOF
     set -e
     apt-get update
     apt-get install -y --no-install-recommends \
-        sudo wget curl git build-essential python3 python3-pip
-
-    # --- Existing Utils --- 
-    apt-get install -y --no-install-recommends \
+        sudo wget curl git build-essential python3 python3-pip python-is-python3 \
         jq bc flex bison kmod rsync device-tree-compiler pkg-config \
         vim nano udev usbutils openocd zsh fzf locales
 

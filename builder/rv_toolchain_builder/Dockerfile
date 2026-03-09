@@ -56,6 +56,7 @@ RUN <<EOF
         python3 python3-pip \
         python3-dev \
         python3-setuptools \
+        python-is-python3 \
         meson \
         pkg-config \
         libglib2.0-dev \
