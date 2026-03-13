@@ -42,77 +42,25 @@ RUN <<EOF
         set -e
         apt-get update
         apt-get install -y --no-install-recommends \
-        sudo \
-        git \
-        openssh-client \
-        build-essential \
-        g++ \
-        autoconf \
-        automake \
-        libtool \
-        device-tree-compiler \
-        ninja-build \
-        cmake \
-        python3 python3-pip \
-        python3-dev \
-        python3-setuptools \
-        python-is-python3 \
-        meson \
-        pkg-config \
-        libglib2.0-dev \
-        libpixman-1-dev \
-        zlib1g-dev \
-        libslirp-dev \
-        libaio-dev \
-        liburing-dev \
-        libncurses-dev \
-        libncurses5-dev \
-        libncursesw5-dev \
-        libsource-highlight-dev \
-        libbabeltrace-dev \
-        libelf-dev \
-        liblzma-dev \
-        libedit-dev \
-        guile-3.0-dev \
-        bc \
-        libgmp-dev \
-        libmpfr-dev \
-        libmpc-dev \
-        libisl-dev \
-        libexpat1-dev \
-        libzstd-dev \
-        libreadline-dev \
-        libffi-dev \
-        libgdbm-dev \
-        texinfo \
-        texlive \
-        texlive-fonts-recommended \
-        texlive-plain-generic \
-        flex \
-        bison \
-        gawk \
-        rsync \
-        patch \
-        file \
-        dejagnu \
-        expect \
-        tcl \
-        wget \
-        curl \
-        xz-utils \
-        vim \
-        htop \
-        ccache \
-        nano \
-        libsdl2-dev \
-        libipt-dev \
-        libcap-ng-dev \
-        ca-certificates \
-        zsh \
-        fzf \
-        fonts-powerline \
-        fonts-noto-cjk \
-        locales
+        # Essential system tools, shell environment, and document processing
+        apt-get install -y --no-install-recommends \
+            sudo locales ca-certificates curl wget \
+            zsh fzf fonts-powerline fonts-noto-cjk \
+            vim nano htop git openssh-client rsync \
+            file patch xz-utils \
+            texinfo texlive texlive-fonts-recommended texlive-plain-generic
+        # Build systems, compilers, automation, and development headers
+        apt-get install -y --no-install-recommends \
+            build-essential g++ autoconf automake libtool ccache \
+            cmake ninja-build meson pkg-config \
+            python3 python3-pip python3-dev python3-setuptools python-is-python3 \
+            bc bison flex gawk device-tree-compiler \
+            dejagnu expect tcl \
+            guile-3.0-dev libelf-dev libncurses-dev libncurses5-dev libncursesw5-dev \
+            libglib2.0-dev libpixman-1-dev zlib1g-dev libslirp-dev libaio-dev liburing-dev \
+            libsource-highlight-dev libbabeltrace-dev liblzma-dev libedit-dev \
+            libgmp-dev libmpfr-dev libmpc-dev libisl-dev libexpat1-dev libzstd-dev \
+            libreadline-dev libffi-dev libgdbm-dev libsdl2-dev libipt-dev libcap-ng-dev
 
     # Configure locales
     locale-gen en_US.UTF-8

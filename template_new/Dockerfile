@@ -42,23 +42,12 @@ RUN <<EOF
     set -e
     apt-get update
     apt-get install -y --no-install-recommends \
-        sudo \
-        git \
-        wget \
-        openssh-client \
-        nano \
-        curl \
-        ca-certificates \
-        zsh \
-        fzf \
-        fonts-powerline \
-        fonts-noto-cjk \
-        locales
+        sudo git vim wget openssh-client nano curl ca-certificates locales \
+        zsh fzf fonts-powerline fonts-noto-cjk 
 
     # Configure locales
     locale-gen en_US.UTF-8
     update-locale LANG=en_US.UTF-8
-    # Inside your RUN <<EOF block:
       
     # Install yq for YAML processing
     ARCH=$(dpkg --print-architecture)

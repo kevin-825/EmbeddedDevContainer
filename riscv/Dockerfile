@@ -42,47 +42,25 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Base + Embedded Development Dependencies
 # -------------------------------------------------------
 RUN <<EOF
-        set -e
-        apt-get update
-        apt-get install -y --no-install-recommends \
-        sudo \
-        wget \
-        libpixman-1-0 \
-        libslirp0 \
-        libaio1t64 \
-        liburing2 \
-        build-essential \
-        ninja-build \
-        cmake \
-        python3 python3-pip python-is-python3 \
-        jq \
-        git \
-        openssh-client \
-        gdb-multiarch \
-        libncurses-dev \
-        guile-3.0-dev \
-        libyaml-dev \
-        python3-yaml \
-        libssl-dev \
-        libelf-dev \
-        bc \
-        flex \
-        bison \
-        kmod \
-        rsync \
-        device-tree-compiler \
-        pkg-config \
-        vim \
-        nano \
-        udev \
-        usbutils \
-        openocd \
-        curl \
-        zsh \
-        fzf \
-        fonts-powerline \
-        fonts-noto-cjk \
-        locales
+      set -e
+      apt-get update
+      # Essential system tools, shell environment, and localization
+      apt-get install -y --no-install-recommends \
+          sudo locales ca-certificates curl wget \
+          zsh fzf fonts-powerline fonts-noto-cjk \
+          vim nano git openssh-client rsync \
+          jq cpio file lz4 zstd liblz4-tool
+      # Build systems, compilers, hardware tools, and dev libraries
+      apt-get install -y --no-install-recommends \
+          build-essential cmake ninja-build pkg-config \
+          python3 python3-pip python-is-python3 python3-yaml \
+          bc bison flex device-tree-compiler \
+          gdb-multiarch openocd usbutils udev kmod \
+          guile-3.0-dev libelf-dev libncurses-dev libssl-dev libyaml-dev \
+          libaio1t64 libpixman-1-0 libslirp0 liburing2
+      #GUI/QEMU display dependencies
+      apt-get install -y --no-install-recommends \
+          libjpeg8 libepoxy0 libgtk-3-0 libgdk-pixbuf-2.0-0 libcairo2 libx11-6 libsdl2-2.0-0
 
     # Configure locales
     locale-gen en_US.UTF-8
@@ -96,18 +74,7 @@ RUN <<EOF
     # Clean up APT cache to reduce image size
     rm -rf /var/lib/apt/lists/*
 EOF
-# -------------------------------------------------------
-# arm qemu Dependencies (for GUI applications inside container)
-# -------------------------------------------------------
-RUN apt-get update && apt-get install -y \
-    libjpeg8 \
-    libepoxy0 \
-    libgtk-3-0 \
-    libgdk-pixbuf-2.0-0 \
-    libcairo2 \
-    libx11-6 \
-    libsdl2-2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+
 # -------------------------------------------------------
 # Configurable RISC-V Toolchain Paths
 # -------------------------------------------------------
