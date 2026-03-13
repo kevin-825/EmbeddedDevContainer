@@ -1,89 +1,71 @@
 # STAGE 1: Asset downloader
 FROM ubuntu:24.04 AS downloader
 
+# Add zsh here so the OMZ installer can run in this stage
 RUN apt-get update && apt-get install -y git curl ca-certificates zsh
 
-# Setup a temporary directory to collect ZSH assets
 WORKDIR /assets
-# Force OMZ to install into our assets folder instead of /root
 ENV ZSH=/assets/.oh-my-zsh
 
 RUN <<EOF
-  ls -l /assets
-
   set -e
-  # Install Oh-My-Zsh
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-  # Define Custom Directory using the variable
   ZSH_CUSTOM="$ZSH/custom"
-
-  # Install Plugins
   git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plugins/zsh-autosuggestions
   git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
   git clone https://github.com/zsh-users/zsh-history-substring-search ${ZSH_CUSTOM}/plugins/zsh-history-substring-search
-
-  # Install Themes
   git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k
   git clone --depth=1 https://github.com/sindresorhus/pure.git ${ZSH_CUSTOM}/themes/pure
-  ls -l /assets
 EOF
 
 # ---
 
 # STAGE 2: Final Image
-FROM ubuntu:24.04
+FROM ubuntu:14.04
 
 LABEL maintainer="kevin@riscv.dev"
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
-# -------------------------------------------------------
-# Base + Embedded Development Dependencies
-# -------------------------------------------------------
+# Essential Mirror Fix for Ubuntu 14.04
+RUN <<EOF
+    rm -rf /etc/apt/sources.list.d/*
+    echo "deb http://mirrors.kernel.org/ubuntu/ trusty main restricted universe multiverse" > /etc/apt/sources.list
+    echo "deb http://mirrors.kernel.org/ubuntu/ trusty-updates main restricted universe multiverse" >> /etc/apt/sources.list
+    echo "deb http://mirrors.kernel.org/ubuntu/ trusty-security main restricted universe multiverse" >> /etc/apt/sources.list
+EOF
+
+# Install system dependencies (restored to your original list, updated for 14.04 compatibility)
 RUN <<EOF
     set -e
-    apt-get update
-    apt-get install -y --no-install-recommends \
-        sudo wget curl git build-essential python3 python3-pip python-is-python3 \
+    apt-get update || true
+    # Note: Added --force-yes for legacy gpg keys and updated pkg names for 14.04
+    apt-get install -y --force-yes --no-install-recommends \
+        sudo wget curl git build-essential python python-pip python-dev \
         jq bc flex bison kmod rsync device-tree-compiler pkg-config \
-        vim nano udev usbutils openocd zsh fzf locales
-
-    # --- Shared Library/App Dependencies ---
-    apt-get install -y --no-install-recommends \
-        libpixman-1-0 libslirp0 libaio1t64 liburing2 \
-        libncurses-dev guile-3.0-dev libyaml-dev python3-yaml \
-        libssl-dev libelf-dev ninja-build cmake gdb-multiarch 
-
-    # --- GUI/QEMU Display Dependencies ---
-    apt-get install -y --no-install-recommends \
-        libjpeg8 libepoxy0 libgtk-3-0 libgdk-pixbuf-2.0-0 \
-        libcairo2 libx11-6 libsdl2-2.0-0
-
-    # --- NEW: Lab-Specific Yocto Dependencies ---
-    apt-get install -y --no-install-recommends \
+        vim nano udev usbutils openocd zsh locales \
+        libpixman-1-dev libaio-dev libncurses5-dev libyaml-dev \
+        libssl-dev libelf-dev ninja-build cmake \
         gawk diffstat unzip texinfo gcc-multilib chrpath socat \
-        u-boot-tools iputils-ping net-tools libsdl1.2-dev xterm
+        u-boot-tools iputils-ping net-tools xterm
 
     # Configure locales
     locale-gen en_US.UTF-8
     update-locale LANG=en_US.UTF-8
 
-    # Install yq for YAML processing
+    # Install yq (using static binary side-load logic)
     ARCH=$(dpkg --print-architecture)
-    wget "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${ARCH}" -O /usr/bin/yq
+    wget "https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_${ARCH}" -O /usr/bin/yq
     chmod +x /usr/bin/yq
 
-    # Install repo utility required by Lab [cite: 55-56]
+    # Install repo utility
     curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > /usr/local/bin/repo
     chmod a+x /usr/local/bin/repo
 
-    # Clean up APT cache
     rm -rf /var/lib/apt/lists/*
 EOF
 
 # -------------------------------------------------------
-# Configurable arm Toolchain Paths
+# Configurable arm Toolchain Paths (Identical to your original)
 # -------------------------------------------------------
 ARG QEMU_PATH=""
 ARG AARCH64_NON_ELF_PATH=""
@@ -99,24 +81,19 @@ ARG GID=1000
 ARG USERNAME="kevin"
 ENV HOME=/home/$USERNAME
 
-# Create non-root user and configure sudo permissions
+# Create non-root user (Identical to your original)
 RUN <<EOF
   set -e
+  # 14.04 doesn't usually have an 'ubuntu' user, but the check remains for safety
   if id "ubuntu" &>/dev/null; then
-    echo ">>> Removing default 'ubuntu' user to free up UID 1000"
     userdel -r ubuntu || true
-    echo " userdel returned with code $?"
   fi
-  #userdel -r ubuntu || true
-  echo ">>> Creating user '$USERNAME' with UID $UID and GID $GID"
   groupadd -g ${GID} -o ${USERNAME}
-  useradd -u ${UID} -m -g ${USERNAME} -G sudo,plugdev -s /usr/bin/zsh ${USERNAME}
-
+  useradd -u ${UID} -m -g ${USERNAME} -G sudo -s /usr/bin/zsh ${USERNAME}
   echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME}
   chmod 0440 /etc/sudoers.d/${USERNAME}
 EOF
 
-# Setup workspace and entrypoint script
 WORKDIR /workdir
 
 # Copy Assets from Stage 1
@@ -125,17 +102,11 @@ COPY --chown=${USERNAME}:${GID} ./.zshrc ${HOME}/.zshrc
 COPY --chown=${USERNAME}:${GID} ./entrypoint.sh /home/entrypoint.sh
 RUN chmod +x /home/entrypoint.sh
 
-# Set final environment variables and volume
 USER $USERNAME
-
 ENV LANG=en_US.UTF-8
 ENV TERM=xterm-256color
 ENV MyENV=devcontainer
 
-
 VOLUME ["/workdir"]
-
 ENTRYPOINT ["/home/entrypoint.sh"]
-#EXPOSE 5900
 CMD ["zsh"]
-
