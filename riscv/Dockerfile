@@ -60,7 +60,7 @@ RUN <<EOF
           libaio1t64 libpixman-1-0 libslirp0 liburing2
       #GUI/QEMU display dependencies
       apt-get install -y --no-install-recommends \
-          libjpeg8 libepoxy0 libgtk-3-0 libgdk-pixbuf-2.0-0 libcairo2 libx11-6 libsdl2-2.0-0
+          libjpeg8 libepoxy0 libgtk-3-0 libgdk-pixbuf-2.0-0 libcairo2 libx11-6 libsdl2-2.0-0 libsndio-dev
 
     # Configure locales
     locale-gen en_US.UTF-8
@@ -78,13 +78,14 @@ EOF
 # -------------------------------------------------------
 # Configurable RISC-V Toolchain Paths
 # -------------------------------------------------------
-ARG QEMU_PATH=""
+ARG QEMU_RV_PATH=""
+ARG QEMU_ARM_PATH=""
 ARG SPIKE_PATH=""
 ARG RISCV_PK_PATH=""
 ARG RV_NEWLIB_PATH=""
 ARG RV_GLIBC_PATH=""
 
-ENV PATH="${QEMU_PATH}:${SPIKE_PATH}:${RISCV_PK_PATH}:${RV_NEWLIB_PATH}:${RV_GLIBC_PATH}:${PATH}"
+ENV PATH="${QEMU_RV_PATH}:${QEMU_ARM_PATH}:${SPIKE_PATH}:${RISCV_PK_PATH}:${RV_NEWLIB_PATH}:${RV_GLIBC_PATH}:${PATH}"
 
 # Define user build arguments and environment
 ARG UID=1000

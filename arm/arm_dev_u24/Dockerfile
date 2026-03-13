@@ -59,7 +59,7 @@ RUN <<EOF
     # --- GUI/QEMU Display Dependencies ---
     apt-get install -y --no-install-recommends \
         libjpeg8 libepoxy0 libgtk-3-0 libgdk-pixbuf-2.0-0 \
-        libcairo2 libx11-6 libsdl2-2.0-0
+        libcairo2 libx11-6 libsdl2-2.0-0 libsndio-dev
 
     # --- NEW: Lab-Specific Yocto Dependencies ---
     apt-get install -y --no-install-recommends \
