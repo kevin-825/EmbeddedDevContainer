@@ -45,7 +45,7 @@ RUN <<EOF
     set -e
     apt-get update
     apt-get install -y --no-install-recommends \
-        cpio file lz4 zstd liblz4-tool \
+        cpio file lz4 zstd liblz4-tool unzip\
         sudo wget curl git build-essential python3 python3-pip python-is-python3 \
         jq bc flex bison kmod rsync device-tree-compiler pkg-config \
         vim nano udev usbutils openocd zsh fzf locales

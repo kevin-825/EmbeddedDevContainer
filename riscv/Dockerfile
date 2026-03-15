@@ -49,7 +49,7 @@ RUN <<EOF
           sudo locales ca-certificates curl wget \
           zsh fzf fonts-powerline fonts-noto-cjk \
           vim nano git openssh-client rsync \
-          jq cpio file lz4 zstd liblz4-tool
+          jq cpio file lz4 zstd liblz4-tool unzip
       # Build systems, compilers, hardware tools, and dev libraries
       apt-get install -y --no-install-recommends \
           build-essential cmake ninja-build pkg-config \
