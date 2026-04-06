@@ -1,5 +1,5 @@
 #!/bin/bash
-source ../json_resolve_scripts/shell_exception_handling_core/exception_handling_core.sh
+source ../../json_resolve_scripts/shell_exception_handling_core/exception_handling_core.sh
 
 # --- Configuration & Defaults ---
 JSON_CFG="image.json"
