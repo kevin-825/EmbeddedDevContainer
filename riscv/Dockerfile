@@ -49,7 +49,8 @@ RUN <<EOF
           sudo locales ca-certificates curl wget \
           zsh fzf fonts-powerline fonts-noto-cjk \
           vim nano git openssh-client rsync \
-          jq cpio file lz4 zstd liblz4-tool unzip
+          jq cpio file lz4 zstd liblz4-tool unzip \
+          genimage dosfstools mtools fdisk gdisk parted 
       # Build systems, compilers, hardware tools, and dev libraries
       apt-get install -y --no-install-recommends \
           build-essential cmake ninja-build pkg-config \
@@ -57,7 +58,7 @@ RUN <<EOF
           bc bison flex device-tree-compiler \
           gdb-multiarch openocd usbutils udev kmod \
           guile-3.0-dev libelf-dev libncurses-dev libssl-dev libyaml-dev \
-          libaio1t64 libpixman-1-0 libslirp0 liburing2
+          libaio1t64 libpixman-1-0 libslirp0 liburing2 libgnutls28-dev
       #GUI/QEMU display dependencies
       apt-get install -y --no-install-recommends \
           libjpeg8 libepoxy0 libgtk-3-0 libgdk-pixbuf-2.0-0 libcairo2 libx11-6 libsdl2-2.0-0 libsndio-dev

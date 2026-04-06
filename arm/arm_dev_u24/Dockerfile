@@ -48,7 +48,8 @@ RUN <<EOF
         cpio file lz4 zstd liblz4-tool unzip\
         sudo wget curl git build-essential python3 python3-pip python-is-python3 \
         jq bc flex bison kmod rsync device-tree-compiler pkg-config \
-        vim nano udev usbutils openocd zsh fzf locales
+        vim nano udev usbutils openocd zsh fzf locales \
+        genimage dosfstools mtools fdisk gdisk parted 
 
     # --- Shared Library/App Dependencies ---
     apt-get install -y --no-install-recommends \
