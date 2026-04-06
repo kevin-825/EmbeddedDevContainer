@@ -36,7 +36,7 @@ if [ -f /usr/share/doc/fzf/examples/completion.zsh ]; then
 fi
 
 # History settings
-HISTFILE=~/.history_dir/.zsh_history
+HISTFILE=/.history_dir/.zsh_history
 HISTSIZE=50000
 SAVEHIST=50000
 
