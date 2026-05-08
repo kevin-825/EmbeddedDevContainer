@@ -8,6 +8,11 @@ DRY_RUN=false
 RESOLVED_JSON_DATA=""
 
 cleanup_outdated_caches() {
+    local use_local_cache
+    use_local_cache=$($jSON_RESOLVER "$JSON_CFG" 'build.use_local_cache')
+    if [[ "$use_local_cache" == "false" ]]; then
+        return 0
+    fi
     # Match the JSON key exactly: cleanOldCaches
     local auto_clean
     local cache_src

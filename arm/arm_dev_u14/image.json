@@ -55,12 +55,16 @@
             "cacheDest": "$( if [[ '${cacheArgs.autoCleanOldCaches}' == 'off' ]]; then echo '${cacheSrc}'; else echo '${cacheArgs.localCachePath}/${repoName}_${tag}/to'; fi )",
             "mode": "max"
         },
+        "use_local_cache": "false",
+        "cache_options":[
+            "--cache-from type=local,src=${cacheArgs.cacheSrc}",
+            "--cache-to type=local,dest=${cacheDest},mode=${cacheArgs.mode},auto-clean=${cacheArgs.autoCleanOldCaches}"
+        ],
         "options": [
             "--progress=plain",
             "--pull=false",
             "--load",
-            "--cache-from type=local,src=${cacheArgs.cacheSrc}",
-            "--cache-to type=local,dest=${cacheDest},mode=${cacheArgs.mode},auto-clean=${cacheArgs.autoCleanOldCaches}",
+            "$( if [[ '${build.use_local_cache}' == 'true' ]]; then echo ${build.cache_options.join(' ')} ; fi )",
             "-f ${build.dockerfile}",
             "-t ${imgName}",
             "--build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
