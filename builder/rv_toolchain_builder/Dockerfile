@@ -53,11 +53,11 @@ RUN <<EOF
         apt-get install -y --no-install-recommends \
             build-essential g++ autoconf automake libtool ccache \
             cmake ninja-build meson pkg-config \
-            python3 python3-pip python3-dev python3-setuptools python-is-python3 \
+            python3 python3-pip python3-dev python3-setuptools python-is-python3 python3-tomli python3-wheel\
             bc bison flex gawk device-tree-compiler \
             dejagnu expect tcl \
             guile-3.0-dev libelf-dev libncurses-dev libncurses5-dev libncursesw5-dev \
-            libglib2.0-dev libpixman-1-dev zlib1g-dev libslirp-dev libaio-dev liburing-dev \
+            libglib2.0-dev libpixman-1-dev libfdt-dev zlib1g-dev libslirp-dev libaio-dev liburing-dev \
             libsource-highlight-dev libbabeltrace-dev liblzma-dev libedit-dev \
             libgmp-dev libmpfr-dev libmpc-dev libisl-dev libexpat1-dev libzstd-dev \
             libreadline-dev libffi-dev libgdbm-dev libsdl2-dev libipt-dev libcap-ng-dev
