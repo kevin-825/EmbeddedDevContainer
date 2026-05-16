@@ -1,0 +1,3 @@
+docker buildx du --builder mybuilder
+
+docker buildx prune --builder mybuilder

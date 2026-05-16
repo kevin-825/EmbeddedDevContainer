@@ -87,6 +87,18 @@ ARG RV_NEWLIB_PATH=""
 ARG RV_GLIBC_PATH=""
 
 ENV PATH="${QEMU_RV_PATH}:${QEMU_ARM_PATH}:${SPIKE_PATH}:${RISCV_PK_PATH}:${RV_NEWLIB_PATH}:${RV_GLIBC_PATH}:${PATH}"
+# 2. Put the venv at the front of the PATH
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN <<EOF
+      set -e
+      apt-get update
+      apt-get install -y --no-install-recommends python3-venv
+      rm -rf /var/lib/apt/lists/*
+EOF
+
+RUN python3 -m venv /opt/venv
+RUN pip install --no-cache-dir kconfiglib
 
 # Define user build arguments and environment
 ARG UID=1000
