@@ -94,7 +94,17 @@ ARG ARM_NON_eABI_PATH=""
 ARG ARM_NON_LINUX_GNUeABIhf_PATH=""
 
 ENV PATH="${QEMU_PATH}:${AARCH64_NON_ELF_PATH}:${AARCH64_NON_LINUX_GNU_PATH}:${ARM_NON_eABI_PATH}:${ARM_NON_LINUX_GNUeABIhf_PATH}:${PATH}"
+ENV PATH="/opt/venv/bin:$PATH"
 
+RUN <<EOF
+      set -e
+      apt-get update
+      apt-get install -y --no-install-recommends python3-venv
+      rm -rf /var/lib/apt/lists/*
+EOF
+
+RUN python3 -m venv /opt/venv
+RUN pip install --no-cache-dir kconfiglib
 # Define user build arguments and environment
 ARG UID=1000
 ARG GID=1000

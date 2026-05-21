@@ -80,7 +80,7 @@ run_build() {
             imgName=$($jSON_RESOLVER "$JSON_CFG" 'build.imgName')
             repoName=$($jSON_RESOLVER "$JSON_CFG" 'build.repoName')
             echo ">>> Build $imgName completed successfully."
-            create_container.sh $imgName $repoName -y
+            #create_container.sh $imgName da0 -y
         else
             echo ">>> ERROR: Docker build failed."
             exit 1
