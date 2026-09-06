@@ -1,5 +1,5 @@
 # STAGE 1: Asset downloader
-FROM ubuntu:24.04 AS downloader
+FROM ubuntu:26.04 AS downloader
 
 # Add zsh here so the OMZ installer can run in this stage
 RUN apt-get update && apt-get install -y git curl ca-certificates zsh
