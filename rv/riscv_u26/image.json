@@ -1,0 +1,90 @@
+{
+    "ver": "0.1",
+    "builder": {
+        "name": "mybuilder",
+        "driver": "docker-container",
+        "buildkitdFlags": "--allow-insecure-entitlement=network.host",
+        "driverOpts": {
+            "network": "host",
+            "cgroup-parent": "docker"
+        },
+        "gcPolicy": {
+            "maxUnused": "60gb", 
+            "maxUnusedBuild": "60gb",
+            "cacheSweepDelay": "48h"
+        },
+        "useProxy": "on",
+        "proxy_env": {
+            "http_proxy": "http://$WIN_GATEWAY:$PROXY_PORT",
+            "https_proxy": "http://$WIN_GATEWAY:$PROXY_PORT",
+            "no_proxy": "localhost,127.0.0.1,::1,192.168.0.0/16"
+        },
+        "create": {
+            "option": [
+                "--name ${builder.name}",
+                "--driver ${builder.driver}",
+                "--buildkitd-flags \"${builder.buildkitdFlags}\"",
+                "--driver-opt network=${builder.driverOpts.network}",
+                "--driver-opt cgroup-parent=${builder.driverOpts['cgroup-parent']}",
+                "--driver-opt gcpolicy.maxUnused=${builder.gcPolicy.maxUnused}",
+                "--driver-opt gcpolicy.maxUnusedBuild=${builder.gcPolicy.maxUnusedBuild}",
+                "--driver-opt gcpolicy.cacheSweepDelay=${builder.gcPolicy.cacheSweepDelay}",
+                "$( if [[ '${builder.useProxy}' == 'on' ]]; then echo '--driver-opt env.http_proxy=${builder.proxy_env.http_proxy} --driver-opt env.https_proxy=${builder.proxy_env.https_proxy} --driver-opt env.no_proxy=${builder.proxy_env.no_proxy}'; fi )"
+            ],
+            "cmd": "docker buildx create ${builder.create.option.join(' ')} --use --bootstrap"
+        }
+    },
+    "build": {
+        "context": ".",
+        "userNameSpace": "kflyn825",
+        "repoName": "rvdev",
+        "tag": "latest",
+        "imgName": "${userNameSpace}/${repoName}:${tag}",
+        "dockerfile": "Dockerfile",
+        "toolchain_base":"/mnt/wsl/vhd0/opt/riscv",
+        "QEMU_RV_PATH":"${toolchain_base}/riscv_qemu/bin",
+        "QEMU_ARM_PATH":"/mnt/wsl/vhd0/opt/arm/arm_qemu/bin",
+        "SPIKE_PATH":"${toolchain_base}/spike/bin",
+        "RISCV_PK_PATH":"${toolchain_base}/pk/riscv64-unknown-elf/bin",
+        "RV_NEWLIB_PATH":"${toolchain_base}/rv_gnu_toolchain_relocated/bin",
+        "RV_GLIBC_PATH":"${toolchain_base}/glibc/riscv/bin",
+        "cacheArgs":{
+            "autoCleanOldCaches": "on",
+            "type": "local",
+            "localCachePath": "/mnt/wsl/disk2/.buildkit-cache",
+            "cacheSrc": "${cacheArgs.localCachePath}/${repoName}_${tag}/from",
+            "cacheDest": "$( if [[ '${cacheArgs.autoCleanOldCaches}' == 'off' ]]; then echo '${cacheSrc}'; else echo '${cacheArgs.localCachePath}/${repoName}_${tag}/to'; fi )",
+            "mode": "max"
+        },
+        "use_local_cache": "false",
+        "cache_options":[
+            "--cache-from type=local,src=${cacheArgs.cacheSrc}",
+            "--cache-to type=local,dest=${cacheDest},mode=${cacheArgs.mode},auto-clean=${cacheArgs.autoCleanOldCaches}"
+        ],
+        "options": [
+            "--progress=plain",
+            "--pull=false",
+            "--load",
+            "$( if [[ '${build.use_local_cache}' == 'true' ]]; then echo ${build.cache_options.join(' ')} ; fi )",
+            "-f ${build.dockerfile}",
+            "-t ${imgName}",
+            "--build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
+            "--build-arg VERSION=${ver}",
+            "--build-arg UID=$(id -u)",
+            "--build-arg GID=$(id -g)",
+            "--build-arg USERNAME=$(id -u -n)",
+            "--build-arg QEMU_RV_PATH=${build.QEMU_RV_PATH}",
+            "--build-arg QEMU_ARM_PATH=${build.QEMU_ARM_PATH}",
+            "--build-arg SPIKE_PATH=${build.SPIKE_PATH}",
+            "--build-arg RISCV_PK_PATH=${build.RISCV_PK_PATH}",
+            "--build-arg RV_NEWLIB_PATH=${build.RV_NEWLIB_PATH}",
+            "--build-arg RV_GLIBC_PATH=${build.RV_GLIBC_PATH}",
+            "--label maintainer=kflyn825@outlook.com",
+            "--label version=1.0",
+            "--output type=docker",
+            "${build.context}"
+        ],
+        "cmd": "docker buildx build ${build.options.join('    ')}"
+
+    }
+}
