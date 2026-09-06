@@ -37,7 +37,7 @@
     "build": {
         "context": ".",
         "userNameSpace": "kflyn825",
-        "repoName": "arm_dev_u24",
+        "repoName": "arm_u26",
         "tag": "latest",
         "imgName": "${userNameSpace}/${repoName}:${tag}",
         "dockerfile": "Dockerfile",
