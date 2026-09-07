@@ -46,7 +46,7 @@
         "QEMU_ARM_PATH":"/mnt/wsl/vhd0/opt/arm/arm_qemu/bin",
         "SPIKE_PATH":"${toolchain_base}/spike/bin",
         "RISCV_PK_PATH":"${toolchain_base}/pk/riscv64-unknown-elf/bin",
-        "RV_NEWLIB_PATH":"${toolchain_base}/rv_gnu_toolchain_relocated/bin",
+        "RV_NEWLIB_PATH":"${toolchain_base}/rv_gnu_toolchain_relocated_u26/bin",
         "RV_GLIBC_PATH":"${toolchain_base}/glibc/riscv/bin",
         "cacheArgs":{
             "autoCleanOldCaches": "on",

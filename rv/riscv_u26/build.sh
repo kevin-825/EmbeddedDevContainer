@@ -1,9 +1,9 @@
 #!/bin/bash
-source ../json_resolve_scripts/shell_exception_handling_core/exception_handling_core.sh
+source ../../json_resolve_scripts/shell_exception_handling_core/exception_handling_core.sh
 
 # --- Configuration & Defaults ---
 JSON_CFG="image.json"
-jSON_RESOLVER="../json_resolve_scripts/resolver.sh"
+jSON_RESOLVER="../../json_resolve_scripts/resolver.sh"
 DRY_RUN=false
 RESOLVED_JSON_DATA=""
 
@@ -44,7 +44,7 @@ cleanup_outdated_caches() {
 # @description: Converts RESOLVED_JSON_DATA into a bash array and a pretty-print string.
 generate_docker_image_build_command() {
 
-    #local options=$(../json_resolve_scripts/resolver.sh '$JSON_CFG' '.build.options[]')
+    #local options=$(../../json_resolve_scripts/resolver.sh '$JSON_CFG' '.build.options[]')
     local CMD
     CMD=$($jSON_RESOLVER "$JSON_CFG" 'build.cmd')
 
